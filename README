@@ -1,17 +1,15 @@
-本教程介绍了tensorflow模型部署的两种基本方法。两种方法分别适用于build graph + session.run模式(模式1)
-和Estimator模式(模式2)。
+This tutorial introduces two basic methods to deploy tensorflow model. Choose appropriate one to deploy your model based on how you train your model. Mode 1: build graph and use session.run; Mode 2: Estimator.  
 
 
-
-整个project的文件分布及各自作用如下：
-tensorflow-serving/
-	build_server.sh    查看保存模型信息，建立并运行用于serving的docker container
-	client.py    模式1下的客户端示例
-	client_estimator.py    模式2下的客户端示例
-	train_and_export.py    模式1下的train和export示例
-	train_and_export_estimator.py    模式2下的train和export示例
-	export/    保存各个export模型的文件夹
-		SOMEFOLDER/   保存某个模型的文件夹，文件夹名称为一串数字
+The file distribution of this tutorial is as follow： 
+tensorflow-serving/  
+	build_server.sh  
+	client.py  
+	client_estimator.py  
+	train_and_export.py   
+	train_and_export_estimator.py  
+	export/  
+		SOMEFOLDER/  
 
 
 
@@ -24,39 +22,29 @@ Prerequisites：
     
 
 
-Tensorflow模型部署的流程可以分为：train, export, build and start server, run client.
+The process of deploying tensorflow model can be divided to: train, export, build and start server, run client.
 
-Train:
-模式1下，build graph + tf.Session.run
-模式2下，创建model_fn，生成estimator, 创建input_fn, 然后estimator.train。
+Train:  
+Mode1:  build graph + tf.Session.run
+Mode2:  create model_fn, generate estimator, create input_fn, then use estimator.train to train model.  
+Export:  
+Mode1: create a SavedModelBuilder, then create a Signature which contain input/output format infomation and model type (predict, clissification, etc), finally add graph, variables and Signature to SavedModelBuilder and save. When save, the key of signature_def_map will be used in client. It determines the usage of model when it's called.  
+Mode2: first create a feature_spec containing input information, then apply build_parsing_serving_input_receiver_fn together with feature_spec to create input processing function serving_input_receiver_fn. Finally export model.  
 
-Export: 
-模式1下，需要先创建一个SavedModelBuilder，然后建立一个包含输入输出格式信息和模型类型(predict, 
-classification, regression, train/eval)的Signature, 最后将图、变量值和Signature添加到
-SavedModelBuilder并保存，保存模型时signature_def_map的key值在客户端中会用到，它决定了调用模型的具体
-用途。 
-模式2下，需要先创建一个包含输入信息的feature_spec，然后调用build_parsing_serving_input_receiver_fn函
-数，利用feature_spec建立数据预处理函数serving_input_receiver_fn，最后输出模型。
+Build and start server:  
+saved_model_cli could be used to inspect exported model infomation.  
+In both modes, the process of creating server is basically the same. First pull serving image, then create container based on image and exported model. However, due to different methods of calling servce in client side, these two modes needs different port. A suggestion is to use 8500 in mode 1 and 8501 in mode 2. An unsupported port could cause Exception.  
 
-Build and start server:
-saved_model_cli指令可以查看输出模型的信息。
-两种模式下创建server的过程一致，先pull serving image, 然后基于image创建容器。但是由于客户端运行的方
-法不同，两种模式下支持的端口也不同，建议模式1用8500，模式2用8501。
-
-Run client:
-模式1下，根据创建server时的端口号创建stub。创建request并在request.model_spec定义要调用的模型参数。
-name是创建server时设置的MODEL_NAME，signature_name是保存模型时signature_def_map中的key值。最后导入
-数据并发送请求，这里需要注意数据类型。
-模式2下，先设定SERVER_URL，例如"http://locahost:PORT/v1/models/MODEL_NAME:KEY"，其中PORT和
-MODEL_NAME是创建server时设置的端口号和MODEL_NAME，KEY是保存模型时signature_def_map中的KEY值。
-然后将输入数据转换成serialized Examples，合并数据，发送请求。
+Run client:  
+Mode1: create tensorflow stub and request, define model params in request.model_spec. model_spec.name is MODEL_NAME in building server and model_spec.signature_name is the key of signature_def_map mentioned in Export. Finally import data and send request. Take care of data type here.  
+Mode2: set SERVER_URL, like "http://locahost:PORT/v1/models/MODEL_NAME:KEY", where PORT and MODEL_NAME are from building server section, KEY is one of the keys in signature_def_map. Convert data to serialized Examples and send request.  
 
 
 
-具体运行指令(以模式1为例)：
+Command (take mode 1 as an example):  
 
-python3 train_and_export.py
+python3 train_and_export.py  
 
-sudo ./build_server.sh
+sudo ./build_server.sh  
 
-python3 client.py
+python3 client.py  
