@@ -1,7 +1,7 @@
 HOME=./
 # saved_model_cli show --dir $HOME/export/1/ --all
 
-# docker pull tensorflow/serving
+docker pull tensorflow/serving
 
 
 # create container

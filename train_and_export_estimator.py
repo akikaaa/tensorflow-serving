@@ -1,7 +1,5 @@
 import tensorflow as tf
 import random
-import numpy as np
-import os
 tf.flags.DEFINE_integer('training_iteration', 18000, 'number of training iterations.')
 tf.flags.DEFINE_integer('batch_size', 120, 'batch size')
 tf.flags.DEFINE_string('work_dir', 'tmp', 'Working directory.')

@@ -21,7 +21,6 @@ def convert_inputs_to_serialized_examples(inputs):
         tf_example = tf.train.Example(features=tf.train.Features(feature=features))
         serialized_example = tf_example.SerializeToString()
         serialized.append(serialized_example)
-        # features_list.append(features)
     return serialized
 
 
@@ -38,7 +37,6 @@ def main():
         predict_request += cur_string
     predict_request += ']}'
     response = requests.post(server_url, data=predict_request)
-    # print(response.text)
     response.raise_for_status()
     response = response.json()
     predictions = response['predictions']
