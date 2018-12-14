@@ -12,7 +12,7 @@ FLAGS = tf.flags.FLAGS
 def main():
     # TRAIN
     # Y = aX+b
-    # true regression coefficient
+    # true regression coefficients
     a = 2.0
     b = 4.5
     tf.logging.set_verbosity(tf.logging.INFO)
@@ -29,7 +29,9 @@ def main():
         data_xs = []
         data_ys = []
         for _ in range(FLAGS.batch_size):
+            # generate x
             data_x = random.uniform(-100.0, 100.0)
+            # generate y by adding gaussian noise
             data_y = a*data_x + b + 0.2*random.gauss(0, 1.5)
             data_xs.append(data_x)
             data_ys.append(data_y)
@@ -47,6 +49,7 @@ def main():
     builder = tf.saved_model.builder.SavedModelBuilder(export_path)
     tensor_info_x = tf.saved_model.utils.build_tensor_info(x_ph)
     tensor_info_y = tf.saved_model.utils.build_tensor_info(y)
+    # define input and output format in a signature
     prediction_signature = (
         tf.saved_model.signature_def_utils.build_signature_def(
             inputs={'x': tensor_info_x},
@@ -54,6 +57,7 @@ def main():
             method_name=tf.saved_model.signature_constants.PREDICT_METHOD_NAME
         )
     )
+    # add graph , variables and signature to builder
     builder.add_meta_graph_and_variables(
         sess, [tf.saved_model.tag_constants.SERVING],
         signature_def_map={

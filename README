@@ -1,0 +1,52 @@
+本教程介绍了tensorflow模型部署的两种基本方法。两种方法分别适用于build graph + session.run模式（模式1）和Estimator模式(模式2)。
+
+
+
+整个project的文件分布及各自作用如下：
+tensorflow-serving/
+	build_server.sh    查看保存模型信息，建立并运行用于serving的docker container
+	client.py    模式1下的客户端示例
+	client_estimator.py    模式2下的客户端示例
+	train_and_export.py    模式1下的train和export示例
+	train_and_export_estimator.py    模式2下的train和export示例
+	export/    保存各个export模型的文件夹
+		SOMEFOLDER/   保存某个模型的文件夹，文件夹名称为一串数字
+
+
+
+Prerequisites：
+    python 3.X
+    tensorflow 1.10.0
+    tensorflow_serving
+    grpc
+    docker
+    
+
+
+Tensorflow模型部署的流程可以分为：train, export, build and start server, run client.
+
+Train:
+模式1下，build graph + tf.Session.run
+模式2下，创建model_fn，生成estimator, 创建input_fn, 然后estimator.train。
+
+Export: 
+模式1下，需要先创建一个SavedModelBuilder，然后建立一个包含输入输出格式信息和模型类型(predict, classification, regression, train/eval)的Signature, 最后将图、变量值和Signature添加到SavedModelBuilder并保存，保存模型时signature_def_map的key值在客户端中会用到，它决定了模型的使用方法。 
+模式2下，需要先创建一个包含输入信息的feature_spec，然后调用build_parsing_serving_input_receiver_fn函数利用feature_spec建立数据预处理函数serving_input_receiver_fn，最后输出模型。
+
+Build and start server:
+saved_model_cli指令可以查看输出模型的信息。
+两种模式下创建server的过程一致，先pull serving image, 然后基于image创建容器。但是由于客户端运行的方法不同，两种模式下支持的端口也不同，建议模式1用8500，模式2用8501。
+
+Run client:
+模式1下，根据创建server时的端口号创建stub。创建request并在request.model_spec定义要调用的模型参数。name是创建server时设置的MODEL_NAME，signature_name是保存模型时signature_def_map中的key值。最后导入数据并发送请求，这里需要注意数据类型。
+模式2下，先设定SERVER_URL，例如"http://locahost:PORT/v1/models/MODEL_NAME:KEY"，其中PORT和MODEL_NAME是创建server时设置的端口号和MODEL_NAME，KEY是保存模型时signature_def_map中的KEY值。将输入数据转换成serialized Examples，合并数据，发送请求。
+
+
+
+具体运行指令(以模式1为例)：
+
+python3 train_and_export.py
+
+sudo ./build_server.sh
+
+python3 client.py

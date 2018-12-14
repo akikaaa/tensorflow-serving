@@ -8,6 +8,7 @@ tf.flags.DEFINE_string('work_dir', 'tmp', 'Working directory.')
 tf.flags.DEFINE_integer('model_version', 1, 'version number of the model.')
 FLAGS = tf.flags.FLAGS
 
+
 def main():
     # TRAIN
     # Y = aX+b
@@ -53,15 +54,15 @@ def main():
         model_dir=FLAGS.work_dir
     )
 
-    estimator.train(input_fn=lambda: train_input_fn(features, labels, FLAGS.batch_size))
+    estimator.train(input_fn=lambda: train_input_fn(features, labels, FLAGS.batch_size), steps=FLAGS.training_iteration)
 
     # EXPORT
+    # Build receiver function.
     feature_spec = {
         "x": tf.FixedLenFeature([1], tf.float32),
     }
-
-    # Build receiver function, and export.
     serving_input_receiver_fn = tf.estimator.export.build_parsing_serving_input_receiver_fn(feature_spec)
+    # export
     estimator.export_savedmodel('export', serving_input_receiver_fn)
 
 
